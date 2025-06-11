@@ -1,2 +1,2 @@
-# Advanced-Int-Viz_Diabetes
+# Advanced-Int-VizDiabetes
 Diabetes Dataset Health Risk COnstellation Custom Graph

@@ -407,8 +407,12 @@ input[type="range"]::-moz-range-thumb {
 
 /* SVG Styles */
 .health-star {
-    cursor: pointer;
+    cursor: grab;
     transition: all 0.3s ease;
+}
+
+.health-star:active {
+    cursor: grabbing;
 }
 
 .health-star:hover {
@@ -420,6 +424,7 @@ input[type="range"]::-moz-range-thumb {
     stroke-width: 1;
     opacity: 0;
     transition: opacity 0.3s;
+    pointer-events: none;
 }
 
 .age-group-label {
@@ -464,4 +469,27 @@ input[type="range"]::-moz-range-thumb {
     .section {
         padding: 50px 0;
     }
+}
+
+/* Scatter info styling */
+.scatter-info {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+/* Hexagon styling */
+.hexagon {
+    stroke: white;
+    stroke-width: 0.5;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.hexagon:hover {
+    stroke-width: 2;
+    filter: brightness(1.2);
 }

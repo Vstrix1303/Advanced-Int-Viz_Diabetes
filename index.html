@@ -52,7 +52,7 @@
                         <div class="legend-grid">
                             <div class="legend-item">
                                 <div class="legend-icon">⭐</div>
-                                <span><strong>Star Size:</strong> BMI level (larger = higher BMI)</span>
+                                <span><strong>Star Size:</strong> BMI level + cluster size (larger = higher BMI or more people)</span>
                             </div>
                             <div class="legend-item">
                                 <div class="legend-icon">🎨</div>
@@ -65,6 +65,14 @@
                             <div class="legend-item">
                                 <div class="legend-icon">💫</div>
                                 <span><strong>Glow Effect:</strong> Mental/physical health burden</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-icon">🔢</div>
+                                <span><strong>Numbers:</strong> How many similar individuals each star represents</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-icon">⭕</div>
+                                <span><strong>Dotted Circle:</strong> Indicates large clusters (>100 people)</span>
                             </div>
                         </div>
                     </div>
@@ -197,11 +205,15 @@
             <section class="section fade-in">
                 <h2 class="section-title">You in the Population</h2>
                 <p class="section-subtitle">
-                    See where you stand compared to the entire population. Your position is marked with a golden star.
+                    Density map showing population clusters by age and risk score. Hexagons represent groups of similar individuals.
                 </p>
 
                 <div class="card full-width">
                     <div id="population-scatter" style="width: 100%; height: 600px;"></div>
+                    <div class="scatter-info">
+                        <p><strong>How to read this visualization:</strong> Each hexagon represents a cluster of individuals with similar age and risk scores. 
+                        Darker colors indicate higher density areas. Your position is marked with a golden star.</p>
+                    </div>
                 </div>
             </section>
         </div>

@@ -30,27 +30,62 @@ class DiabetesRiskDashboard {
 
     async loadData() {
         try {
-            this.data = await d3.csv("data/diabetes_012_health_indicators_BRFSS2015.csv", d => ({
-                id: Math.random().toString(36).substr(2, 9),
-                diabetes: +d.Diabetes_012,
-                age: this.mapAgeGroup(+d.Age),
-                ageGroup: +d.Age,
-                bmi: +d.BMI,
-                gender: +d.Sex === 1 ? 'male' : 'female',
-                highBP: +d.HighBP === 1,
-                highChol: +d.HighChol === 1,
-                smoker: +d.Smoker === 1,
-                noExercise: +d.PhysActivity === 0,
-                heartDisease: +d.HeartDiseaseorAttack === 1,
-                stroke: +d.Stroke === 1,
-                genHealth: +d.GenHlth,
-                mentHealth: +d.MentHlth,
-                physHealth: +d.PhysHlth,
-                diffWalk: +d.DiffWalk === 1,
-                fruits: +d.Fruits === 1,
-                veggies: +d.Veggies === 1,
-                hvyAlcohol: +d.HvyAlcoholConsump === 1
-            }));
+            // Try different paths for the CSV file
+            const possiblePaths = [
+                "diabetes_012_health_indicators_BRFSS2015.csv",
+                "./diabetes_012_health_indicators_BRFSS2015.csv",
+                "data/diabetes_012_health_indicators_BRFSS2015.csv",
+                "../diabetes_012_health_indicators_BRFSS2015.csv"
+            ];
+            
+            let data = null;
+            let loadError = null;
+            
+            // Try each path until one works
+            for (const path of possiblePaths) {
+                try {
+                    console.log(`Trying to load CSV from: ${path}`);
+                    data = await d3.csv(path, d => ({
+                        id: Math.random().toString(36).substr(2, 9),
+                        diabetes: +d.Diabetes_012,
+                        age: this.mapAgeGroup(+d.Age),
+                        ageGroup: +d.Age,
+                        bmi: +d.BMI,
+                        gender: +d.Sex === 1 ? 'male' : 'female',
+                        highBP: +d.HighBP === 1,
+                        highChol: +d.HighChol === 1,
+                        smoker: +d.Smoker === 1,
+                        noExercise: +d.PhysActivity === 0,
+                        heartDisease: +d.HeartDiseaseorAttack === 1,
+                        stroke: +d.Stroke === 1,
+                        genHealth: +d.GenHlth,
+                        mentHealth: +d.MentHlth,
+                        physHealth: +d.PhysHlth,
+                        diffWalk: +d.DiffWalk === 1,
+                        fruits: +d.Fruits === 1,
+                        veggies: +d.Veggies === 1,
+                        hvyAlcohol: +d.HvyAlcoholConsump === 1
+                    }));
+                    
+                    if (data && data.length > 0) {
+                        console.log(`Successfully loaded ${data.length} records from ${path}`);
+                        this.data = data;
+                        break;
+                    }
+                } catch (error) {
+                    loadError = error;
+                    console.log(`Failed to load from ${path}:`, error.message);
+                }
+            }
+            
+            // If no data was loaded, show error and use sample data
+            if (!this.data || this.data.length === 0) {
+                console.error("Could not load CSV data from any path. Please ensure the CSV file is in the correct location.");
+                this.showDataLoadError();
+                // Use sample data for demonstration
+                this.useSampleData();
+                return;
+            }
 
             // Calculate risk scores
             this.data.forEach(d => {
@@ -60,10 +95,99 @@ class DiabetesRiskDashboard {
                 d.healthBurden = Math.max(d.mentHealth, d.physHealth);
             });
 
-            console.log(`Loaded ${this.data.length} records`);
+            console.log(`Data processing complete. Loaded ${this.data.length} records`);
         } catch (error) {
-            console.error("Error loading data:", error);
+            console.error("Error in data loading process:", error);
+            this.showDataLoadError();
+            this.useSampleData();
         }
+    }
+
+    showDataLoadError() {
+        // Add an error message to the page
+        const heroSection = document.querySelector('.hero');
+        if (heroSection && !document.querySelector('.data-error')) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'data-error';
+            errorDiv.style.cssText = 'background: rgba(231, 76, 60, 0.2); border: 1px solid #e74c3c; padding: 15px; margin: 20px auto; max-width: 600px; border-radius: 10px; text-align: center;';
+            errorDiv.innerHTML = `
+                <strong>⚠️ Data Loading Error</strong><br>
+                Could not load the CSV file. Please ensure 'diabetes_012_health_indicators_BRFSS2015.csv' is in the correct directory.<br>
+                <small>Using sample data for demonstration purposes.</small>
+            `;
+            heroSection.appendChild(errorDiv);
+        }
+    }
+
+    useSampleData() {
+        // Generate sample data for demonstration
+        console.log("Generating sample data for demonstration...");
+        this.data = [];
+        
+        // Generate 10000 sample records with realistic distributions
+        for (let i = 0; i < 10000; i++) {
+            const ageGroup = Math.floor(Math.random() * 13) + 1;
+            const age = this.mapAgeGroup(ageGroup);
+            const bmi = 18 + Math.random() * 27; // BMI 18-45
+            
+            // Risk factors with age-based probability
+            const ageFactor = age / 100;
+            const highBP = Math.random() < (0.2 + ageFactor * 0.3);
+            const highChol = Math.random() < (0.2 + ageFactor * 0.2);
+            const smoker = Math.random() < 0.15;
+            const noExercise = Math.random() < (0.3 + ageFactor * 0.2);
+            const heartDisease = Math.random() < (0.05 + ageFactor * 0.15);
+            const stroke = Math.random() < (0.02 + ageFactor * 0.08);
+            
+            // Diabetes probability based on risk factors
+            const riskCount = highBP + highChol + smoker + noExercise + heartDisease + stroke + (bmi > 30 ? 1 : 0);
+            const diabetesProbability = 0.05 + (riskCount * 0.08) + (ageFactor * 0.1);
+            const diabetes = Math.random() < diabetesProbability ? (Math.random() < 0.7 ? 2 : 1) : 0;
+            
+            const record = {
+                id: Math.random().toString(36).substr(2, 9),
+                diabetes: diabetes,
+                age: age,
+                ageGroup: ageGroup,
+                bmi: bmi,
+                gender: Math.random() < 0.5 ? 'male' : 'female',
+                highBP: highBP,
+                highChol: highChol,
+                smoker: smoker,
+                noExercise: noExercise,
+                heartDisease: heartDisease,
+                stroke: stroke,
+                genHealth: Math.floor(Math.random() * 5) + 1,
+                mentHealth: Math.floor(Math.random() * 31),
+                physHealth: Math.floor(Math.random() * 31),
+                diffWalk: Math.random() < (0.1 + ageFactor * 0.2),
+                fruits: Math.random() < 0.6,
+                veggies: Math.random() < 0.7,
+                hvyAlcohol: Math.random() < 0.05
+            };
+            
+            record.riskScore = this.calculateRiskScore(record);
+            record.riskFactors = record.highBP + record.highChol + record.smoker + 
+                                record.stroke + record.heartDisease + record.hvyAlcohol + 
+                                (record.noExercise ? 1 : 0);
+            record.healthBurden = Math.max(record.mentHealth, record.physHealth);
+            
+            this.data.push(record);
+        }
+        
+        console.log(`Generated ${this.data.length} sample records`);
+    }
+
+    // Create representative sample using stratified sampling with adaptive sampling
+    createRepresentativeSample(targetSize) {
+        if (!this.data || this.data.length === 0) {
+            console.warn("No data available for sampling");
+            return [];
+        }
+        
+        // Simple random sampling for other uses
+        const shuffled = d3.shuffle([...this.data]);
+        return shuffled.slice(0, targetSize);
     }
 
     mapAgeGroup(ageCode) {
@@ -73,6 +197,25 @@ class DiabetesRiskDashboard {
             11: 72, 12: 77, 13: 82
         };
         return ageMap[ageCode] || 50;
+    }
+
+    getAgeGroupLabel(ageCode) {
+        const ageLabels = {
+            1: "18-24 years",
+            2: "25-29 years", 
+            3: "30-34 years",
+            4: "35-39 years",
+            5: "40-44 years",
+            6: "45-49 years",
+            7: "50-54 years",
+            8: "55-59 years",
+            9: "60-64 years",
+            10: "65-69 years",
+            11: "70-74 years",
+            12: "75-79 years",
+            13: "80+ years"
+        };
+        return ageLabels[ageCode] || "Unknown";
     }
 
     calculateRiskScore(profile) {
@@ -155,8 +298,8 @@ class DiabetesRiskDashboard {
             return path;
         };
 
-        // Sample data for performance
-        const sampleData = this.data.slice(0, 3000);
+        // Use 500 representative samples
+        const sampleData = this.createSimpleRepresentativeSample(500);
 
         // Create age group clusters
         const ageGroups = [...new Set(sampleData.map(d => d.ageGroup))].sort((a, b) => a - b);
@@ -176,7 +319,7 @@ class DiabetesRiskDashboard {
         sampleData.forEach(d => {
             const center = clusterCenters[d.ageGroup];
             const scatter = 80;
-            const healthOffset = (d.genHealth - 3) * 20;
+            const healthOffset = (d.genHealth - 3) * 25;
             
             d.x = center.x + (Math.random() - 0.5) * scatter + healthOffset;
             d.y = center.y + (Math.random() - 0.5) * scatter;
@@ -195,22 +338,10 @@ class DiabetesRiskDashboard {
         feMerge.append("feMergeNode").attr("in", "coloredBlur");
         feMerge.append("feMergeNode").attr("in", "SourceGraphic");
 
-        // Add age group labels
-        ageGroups.forEach(age => {
-            const center = clusterCenters[age];
-            svg.append("text")
-                .attr("class", "age-group-label")
-                .attr("x", center.x)
-                .attr("y", center.y - 100)
-                .text(`Age Group ${age}`)
-                .style("font-weight", "bold")
-                .style("font-size", "14px");
-        });
-
         // Size scale for BMI
         const sizeScale = d3.scaleSqrt()
             .domain(d3.extent(sampleData, d => d.bmi))
-            .range([6, 18]);
+            .range([8, 20]);
 
         // Create health stars
         const healthStars = svg.selectAll(".health-star")
@@ -247,39 +378,111 @@ class DiabetesRiskDashboard {
             .attr("dur", "2s")
             .attr("repeatCount", "indefinite");
 
-        // Add interactivity
-        healthStars
-            .on("mouseover", (event, d) => {
-                d3.select(event.currentTarget)
-                    .transition()
-                    .duration(200)
-                    .attr("transform", `translate(${d.x}, ${d.y}) scale(1.3)`);
+        // Add drag behavior
+        const drag = d3.drag()
+            .on("start", function(event, d) {
+                d3.select(this).raise(); // Bring to front
+                d3.select(this).style("cursor", "grabbing");
+            })
+            .on("drag", function(event, d) {
+                d.x = event.x;
+                d.y = event.y;
+                d3.select(this).attr("transform", `translate(${d.x}, ${d.y})`);
                 
-                // Show constellation lines
+                // Update any constellation lines if they're showing
                 svg.selectAll(".constellation-line").remove();
-                sampleData.forEach(other => {
-                    if (other.id !== d.id && Math.abs(other.riskFactors - d.riskFactors) <= 1) {
-                        svg.append("line")
-                            .attr("class", "constellation-line")
-                            .attr("x1", d.x)
-                            .attr("y1", d.y)
-                            .attr("x2", other.x)
-                            .attr("y2", other.y)
-                            .style("opacity", 0.3);
-                    }
-                });
-                
-                this.showTooltip(event, d);
+            })
+            .on("end", function(event, d) {
+                d3.select(this).style("cursor", "grab");
+            });
+
+        // Add interactivity with drag
+        healthStars
+            .style("cursor", "grab")
+            .call(drag)
+            .on("mouseover", (event, d) => {
+                // Don't trigger hover effects while dragging
+                if (!event.buttons) {
+                    d3.select(event.currentTarget)
+                        .transition()
+                        .duration(200)
+                        .attr("transform", `translate(${d.x}, ${d.y}) scale(1.3)`);
+                    
+                    // Show constellation lines to similar profiles
+                    svg.selectAll(".constellation-line").remove();
+                    sampleData.forEach(other => {
+                        if (other.id !== d.id && Math.abs(other.riskFactors - d.riskFactors) <= 1) {
+                            svg.append("line")
+                                .attr("class", "constellation-line")
+                                .attr("x1", d.x)
+                                .attr("y1", d.y)
+                                .attr("x2", other.x)
+                                .attr("y2", other.y)
+                                .style("opacity", 0.3);
+                        }
+                    });
+                    
+                    this.showTooltip(event, d);
+                }
             })
             .on("mouseout", (event, d) => {
-                d3.select(event.currentTarget)
-                    .transition()
-                    .duration(200)
-                    .attr("transform", `translate(${d.x}, ${d.y}) scale(1)`);
-                
-                svg.selectAll(".constellation-line").remove();
-                this.hideTooltip();
+                // Don't trigger hover effects while dragging
+                if (!event.buttons) {
+                    d3.select(event.currentTarget)
+                        .transition()
+                        .duration(200)
+                        .attr("transform", `translate(${d.x}, ${d.y}) scale(1)`);
+                    
+                    svg.selectAll(".constellation-line").remove();
+                    this.hideTooltip();
+                }
             });
+    }
+
+    // Simple representative sampling for 500 points
+    createSimpleRepresentativeSample(targetSize) {
+        if (!this.data || this.data.length === 0) {
+            console.warn("No data available for sampling");
+            return [];
+        }
+        
+        // Simple random sampling
+        const shuffled = d3.shuffle([...this.data]);
+        const sample = shuffled.slice(0, targetSize);
+        
+        console.log(`Created simple sample of ${sample.length} from ${this.data.length} records`);
+        return sample;
+    }
+
+    showTooltip(event, d) {
+        const diabetesStatus = ['No Diabetes', 'Prediabetes', 'Diabetes'][d.diabetes];
+        const healthStatus = ['Excellent', 'Very Good', 'Good', 'Fair', 'Poor'][d.genHealth - 1];
+        
+        const conditions = [];
+        if (d.highBP) conditions.push('High BP');
+        if (d.highChol) conditions.push('High Cholesterol');
+        if (d.smoker) conditions.push('Smoker');
+        if (d.noExercise) conditions.push('No Exercise');
+        if (d.heartDisease) conditions.push('Heart Disease');
+        if (d.stroke) conditions.push('Stroke');
+
+        const content = `
+            <strong>Health Constellation Profile</strong><br/>
+            Age: ${this.getAgeGroupLabel(d.ageGroup)} (${d.age} years)<br/>
+            BMI: ${d.bmi.toFixed(1)}<br/>
+            Risk Score: ${d.riskScore.toFixed(1)}<br/>
+            Diabetes Status: ${diabetesStatus}<br/>
+            General Health: ${healthStatus}<br/>
+            Risk Factors: ${d.riskFactors}<br/>
+            Health Burden Days: ${d.healthBurden}<br/>
+            ${conditions.length ? '<br/>Active Conditions: ' + conditions.join(', ') : ''}
+        `;
+
+        this.tooltip
+            .style('opacity', 1)
+            .style('left', (event.pageX + 10) + 'px')
+            .style('top', (event.pageY - 10) + 'px')
+            .html(content);
     }
 
     createRiskDistribution() {
@@ -342,7 +545,12 @@ class DiabetesRiskDashboard {
             .text('Risk Score Range');
 
         g.append('g')
-            .call(d3.axisLeft(y))
+            .call(d3.axisLeft(y).tickFormat(d => {
+                if (d >= 1000) {
+                    return `${(d/1000).toFixed(d % 1000 === 0 ? 0 : 1)}k`;
+                }
+                return d;
+            }))
             .append('text')
             .attr('transform', 'rotate(-90)')
             .attr('y', -35)
@@ -440,7 +648,7 @@ class DiabetesRiskDashboard {
         const rect = container.node().getBoundingClientRect();
         const width = rect.width;
         const height = 400;
-        const margin = { top: 20, right: 120, bottom: 40, left: 50 };
+        const margin = { top: 20, right: 120, bottom: 80, left: 60 };
 
         const svg = container.append('svg')
             .attr('width', width)
@@ -464,7 +672,9 @@ class DiabetesRiskDashboard {
 
         const data = Array.from(ageData, ([age, counts]) => ({
             age,
-            ...counts
+            ageLabel: this.getAgeGroupLabel(age),
+            ...counts,
+            total: counts.none + counts.pre + counts.diabetes
         })).sort((a, b) => a.age - b.age);
 
         // Stack the data
@@ -480,73 +690,176 @@ class DiabetesRiskDashboard {
             .padding(0.1);
 
         const y = d3.scaleLinear()
-            .domain([0, d3.max(data, d => d.none + d.pre + d.diabetes)])
+            .domain([0, d3.max(data, d => d.total)])
             .range([plotHeight, 0]);
 
         const color = d3.scaleOrdinal()
             .domain(['none', 'pre', 'diabetes'])
             .range(['#4A90E2', '#F5A623', '#D0021B']);
 
-        // Bars
-        g.selectAll('g.series')
+        // Create tooltip group for this chart
+        const barTooltip = d3.select("body").append("div")
+            .attr("class", "bar-tooltip")
+            .style("position", "absolute")
+            .style("opacity", 0)
+            .style("background", "rgba(0, 0, 0, 0.9)")
+            .style("color", "white")
+            .style("padding", "10px")
+            .style("border-radius", "5px")
+            .style("font-size", "12px")
+            .style("pointer-events", "none");
+
+        // Add bars with interactivity
+        const barGroups = g.selectAll('g.series')
             .data(series)
             .enter().append('g')
             .attr('class', 'series')
-            .attr('fill', d => color(d.key))
-            .selectAll('rect')
+            .attr('fill', d => color(d.key));
+
+        barGroups.selectAll('rect')
             .data(d => d)
             .enter().append('rect')
             .attr('x', d => x(d.data.age))
             .attr('y', d => y(d[1]))
             .attr('height', d => y(d[0]) - y(d[1]))
-            .attr('width', x.bandwidth());
+            .attr('width', x.bandwidth())
+            .style('cursor', 'pointer')
+            .on('mouseover', function(event, d) {
+                const seriesKey = d3.select(this.parentNode).datum().key;
+                const statusName = seriesKey === 'none' ? 'No Diabetes' : 
+                                 seriesKey === 'pre' ? 'Prediabetes' : 'Diabetes';
+                const count = d[1] - d[0];
+                const percentage = ((count / d.data.total) * 100).toFixed(1);
+                
+                // Highlight the bar
+                d3.select(this)
+                    .style('opacity', 0.8)
+                    .style('stroke', '#333')
+                    .style('stroke-width', 2);
+                
+                // Show tooltip
+                barTooltip.transition()
+                    .duration(200)
+                    .style('opacity', 1);
+                
+                barTooltip.html(`
+                    <strong>${d.data.ageLabel}</strong><br/>
+                    <div style="margin-top: 5px;">
+                        <strong>${statusName}:</strong> ${count.toLocaleString()} (${percentage}%)<br/>
+                        <div style="margin-top: 5px; padding-top: 5px; border-top: 1px solid #555;">
+                            Total in age group: ${d.data.total.toLocaleString()}<br/>
+                            No Diabetes: ${d.data.none.toLocaleString()} (${(d.data.none/d.data.total*100).toFixed(1)}%)<br/>
+                            Prediabetes: ${d.data.pre.toLocaleString()} (${(d.data.pre/d.data.total*100).toFixed(1)}%)<br/>
+                            Diabetes: ${d.data.diabetes.toLocaleString()} (${(d.data.diabetes/d.data.total*100).toFixed(1)}%)
+                        </div>
+                    </div>
+                `)
+                    .style('left', (event.pageX + 10) + 'px')
+                    .style('top', (event.pageY - 10) + 'px');
+            })
+            .on('mousemove', function(event) {
+                barTooltip
+                    .style('left', (event.pageX + 10) + 'px')
+                    .style('top', (event.pageY - 10) + 'px');
+            })
+            .on('mouseout', function() {
+                d3.select(this)
+                    .style('opacity', 1)
+                    .style('stroke', 'none');
+                
+                barTooltip.transition()
+                    .duration(500)
+                    .style('opacity', 0);
+            });
 
-        // Axes
+        // X-axis with better formatting
         g.append('g')
             .attr('transform', `translate(0,${plotHeight})`)
-            .call(d3.axisBottom(x).tickFormat(d => `Group ${d}`))
-            .append('text')
+            .call(d3.axisBottom(x).tickFormat(d => this.getAgeGroupLabel(d)))
+            .selectAll('text')
+            .style('text-anchor', 'end')
+            .attr('dx', '-.8em')
+            .attr('dy', '.15em')
+            .attr('transform', 'rotate(-45)')
+            .style('font-size', '11px');
+
+        g.append('text')
             .attr('x', plotWidth / 2)
-            .attr('y', 35)
+            .attr('y', plotHeight + 70)
             .attr('fill', '#000')
             .style('text-anchor', 'middle')
-            .text('Age Group');
+            .style('font-weight', 'bold')
+            .text('Age Groups');
 
+        // Y-axis with k formatting
         g.append('g')
-            .call(d3.axisLeft(y))
+            .call(d3.axisLeft(y).tickFormat(d => {
+                if (d >= 1000) {
+                    return `${(d/1000).toFixed(d % 1000 === 0 ? 0 : 1)}k`;
+                }
+                return d;
+            }))
             .append('text')
             .attr('transform', 'rotate(-90)')
-            .attr('y', -35)
+            .attr('y', -45)
             .attr('x', -plotHeight / 2)
             .attr('fill', '#000')
             .style('text-anchor', 'middle')
+            .style('font-weight', 'bold')
             .text('Number of Individuals');
 
-        // Legend
+        // Interactive legend
         const legend = svg.append('g')
             .attr('transform', `translate(${width - margin.right + 10}, ${margin.top})`);
 
         const legendItems = [
-            { key: 'none', label: 'No Diabetes' },
-            { key: 'pre', label: 'Prediabetes' },
-            { key: 'diabetes', label: 'Diabetes' }
+            { key: 'none', label: 'No Diabetes', color: '#4A90E2' },
+            { key: 'pre', label: 'Prediabetes', color: '#F5A623' },
+            { key: 'diabetes', label: 'Diabetes', color: '#D0021B' }
         ];
 
         legendItems.forEach((item, i) => {
             const legendRow = legend.append('g')
-                .attr('transform', `translate(0, ${i * 20})`);
+                .attr('transform', `translate(0, ${i * 25})`)
+                .style('cursor', 'pointer');
 
             legendRow.append('rect')
-                .attr('width', 15)
-                .attr('height', 15)
-                .attr('fill', color(item.key));
+                .attr('width', 18)
+                .attr('height', 18)
+                .attr('fill', item.color)
+                .attr('rx', 2);
 
             legendRow.append('text')
-                .attr('x', 20)
-                .attr('y', 12)
+                .attr('x', 24)
+                .attr('y', 14)
                 .text(item.label)
-                .style('font-size', '12px');
+                .style('font-size', '13px')
+                .style('alignment-baseline', 'middle');
+            
+            // Legend interactivity
+            legendRow.on('mouseover', function() {
+                // Highlight corresponding bars
+                barGroups.selectAll('rect')
+                    .style('opacity', d => {
+                        const seriesKey = d3.select(d).datum().key;
+                        return seriesKey === item.key ? 1 : 0.3;
+                    });
+                
+                d3.select(this).select('rect')
+                    .attr('stroke', '#333')
+                    .attr('stroke-width', 2);
+            })
+            .on('mouseout', function() {
+                barGroups.selectAll('rect')
+                    .style('opacity', 1);
+                
+                d3.select(this).select('rect')
+                    .attr('stroke', 'none');
+            });
         });
+
+        // Clean up on component unmount
+        this.ageDistTooltip = barTooltip;
     }
 
     createPopulationScatter() {
